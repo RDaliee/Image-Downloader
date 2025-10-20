@@ -70,24 +70,77 @@ function showError(message) {
 
 // Download a single image with retry logic
 async function downloadImage(url, retries = 3) {
+  // List of CORS proxies to try in order
+  const proxies = [
+    url => url, // Try direct fetch first
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://proxy.cors.sh/${url}`
+  ];
+
   for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl, { signal: AbortSignal.timeout(30000) });
+    // Try each proxy in sequence
+    for (let proxyIndex = 0; proxyIndex < proxies.length; proxyIndex++) {
+      try {
+        const proxyUrl = proxies[proxyIndex](url);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+        // Add proper headers to mimic a real browser request
+        const headers = {
+          'Accept': 'image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Sec-Fetch-Dest': 'image',
+          'Sec-Fetch-Mode': 'no-cors',
+          'Sec-Fetch-Site': 'cross-site'
+        };
 
-      const blob = await response.blob();
-      const filename = url.split('/').pop().split('?')[0] || `image_${Date.now()}.jpg`;
-      return { success: true, blob, filename, url };
-    } catch (error) {
-      if (attempt === retries) {
-        console.error(`Failed to download ${url} after ${retries} attempts:`, error.message);
-        return { success: false, error: error.message, url };
+        // Only add User-Agent for CORS proxies (not direct fetch)
+        const fetchOptions = {
+          signal: AbortSignal.timeout(30000),
+          mode: proxyIndex === 0 ? 'no-cors' : 'cors',
+          credentials: 'omit',
+          referrerPolicy: 'no-referrer'
+        };
+
+        // For CORS proxies, we can add more headers
+        if (proxyIndex > 0) {
+          fetchOptions.headers = headers;
+        }
+
+        const response = await fetch(proxyUrl, fetchOptions);
+
+        // For no-cors mode, we can't check response.ok, so we check the blob
+        if (proxyIndex === 0) {
+          const blob = await response.blob();
+          if (blob.size > 0) {
+            const filename = url.split('/').pop().split('?')[0] || `image_${Date.now()}.jpg`;
+            return { success: true, blob, filename, url };
+          }
+          throw new Error('Empty response');
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('Empty blob received');
+        }
+
+        const filename = url.split('/').pop().split('?')[0] || `image_${Date.now()}.jpg`;
+        return { success: true, blob, filename, url };
+      } catch (error) {
+        // If this was the last proxy and last attempt, log and return failure
+        if (proxyIndex === proxies.length - 1 && attempt === retries) {
+          console.error(`Failed to download ${url} after ${retries} attempts:`, error.message);
+          return { success: false, error: error.message, url };
+        }
+        // Otherwise, continue to next proxy or retry
       }
-      // Wait before retry (exponential backoff)
+    }
+
+    // Wait before retry (exponential backoff)
+    if (attempt < retries) {
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
@@ -113,8 +166,8 @@ async function downloadAll(urls) {
   const downloadBtn = document.getElementById('downloadAll');
   const batchSizeSelect = document.getElementById('batchSize');
 
-  // Configuration
-  const CONCURRENT_DOWNLOADS = 10;
+  // Configuration - reduced to avoid rate limiting
+  const CONCURRENT_DOWNLOADS = 3;
   const IMAGES_PER_ZIP = parseInt(batchSizeSelect?.value || 500);
 
   // Disable button and show progress
@@ -151,6 +204,11 @@ async function downloadAll(urls) {
       const completed = startIdx + i + batch.length;
       const percentage = Math.round((completed / totalImages) * 100);
       progressDiv.textContent = `Downloaded ${completed}/${totalImages} (${percentage}%) - Batch ${zipIndex + 1}/${numZipFiles}`;
+
+      // Add small delay between batches to avoid rate limiting
+      if (i + CONCURRENT_DOWNLOADS < chunkUrls.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
     // Count successes and failures
@@ -170,7 +228,7 @@ async function downloadAll(urls) {
     const zip = new JSZip();
     const folder = zip.folder('images');
 
-    successResults.forEach((result, idx) => {
+    successResults.forEach((result) => {
       folder.file(result.filename, result.blob);
     });
 
