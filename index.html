@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Downloader</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Image Downloader</h1>
+  <input type="text" id="sheetUrl" placeholder="Enter Google Sheet CSV URL" />
+  <button id="loadBtn">Load Images</button>
+  <div id="gallery"></div>
+  <button id="downloadAll">Download All</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
