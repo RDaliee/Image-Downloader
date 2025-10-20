@@ -3,19 +3,27 @@ body {
   text-align: center;
   background: #fafafa;
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 h1 {
   color: #333;
+  margin-bottom: 30px;
+}
+
+.input-section {
   margin-bottom: 20px;
 }
 
 #sheetUrl {
   padding: 10px;
-  width: 400px;
+  width: 500px;
+  max-width: 80%;
   margin-right: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 14px;
 }
 
 button {
@@ -26,6 +34,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
 }
 
 button:hover:not(:disabled) {
@@ -35,6 +44,42 @@ button:hover:not(:disabled) {
 button:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+.download-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.batch-config {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.batch-config label {
+  font-weight: 500;
+  color: #555;
+}
+
+#batchSize {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.help-text {
+  color: #666;
+  font-size: 12px;
+  font-style: italic;
 }
 
 #gallery {

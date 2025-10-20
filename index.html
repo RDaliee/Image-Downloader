@@ -8,10 +8,27 @@
 </head>
 <body>
   <h1>Image Downloader</h1>
-  <input type="text" id="sheetUrl" placeholder="Enter Google Sheet CSV URL" />
-  <button id="loadBtn">Load Images</button>
+  <div class="input-section">
+    <input type="text" id="sheetUrl" placeholder="Enter Google Sheet CSV URL" />
+    <button id="loadBtn">Load Images</button>
+  </div>
+
   <div id="gallery"></div>
-  <button id="downloadAll">Download All</button>
+
+  <div class="download-section">
+    <div class="batch-config">
+      <label for="batchSize">Images per zip file:</label>
+      <select id="batchSize">
+        <option value="200">200 images</option>
+        <option value="500" selected>500 images</option>
+        <option value="1000">1000 images</option>
+        <option value="99999">All in one file</option>
+      </select>
+      <span class="help-text">For large batches (1000+), splitting into multiple files is recommended</span>
+    </div>
+    <button id="downloadAll">Download All</button>
+  </div>
+
   <div id="progress" style="display: none;"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
