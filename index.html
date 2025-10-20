@@ -8,11 +8,27 @@
 </head>
 <body>
   <h1>Image Downloader</h1>
+
+  <div class="instructions-box">
+    <strong>Quick Start:</strong> Publish your Google Sheet as CSV, then paste the URL below
+    <details>
+      <summary>How to get the CSV URL?</summary>
+      <ol>
+        <li>Open your Google Sheet with image URLs</li>
+        <li>Click <strong>File → Share → Publish to web</strong></li>
+        <li>Select <strong>"Comma-separated values (.csv)"</strong> from dropdown</li>
+        <li>Click <strong>"Publish"</strong></li>
+        <li>Copy the URL (should contain "/pub?output=csv")</li>
+      </ol>
+    </details>
+  </div>
+
   <div class="input-section">
-    <input type="text" id="sheetUrl" placeholder="Enter Google Sheet CSV URL" />
+    <input type="text" id="sheetUrl" placeholder="Paste CSV URL here (e.g., https://docs.google.com/.../pub?output=csv)" />
     <button id="loadBtn">Load Images</button>
   </div>
 
+  <div id="error" style="display: none;"></div>
   <div id="gallery"></div>
 
   <div class="download-section">

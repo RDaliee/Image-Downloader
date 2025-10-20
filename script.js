@@ -1,19 +1,71 @@
 async function loadImages(sheetUrl) {
-  const res = await fetch(sheetUrl);
-  const text = await res.text();
-  const rows = text.split('\n').map(r => r.split(','));
-  const urls = rows.flat().filter(u => u.startsWith('http'));
-
+  const errorDiv = document.getElementById('error');
   const gallery = document.getElementById('gallery');
-  gallery.innerHTML = '';
-  urls.forEach(url => {
-    const img = document.createElement('img');
-    img.src = url.trim();
-    img.className = 'thumbnail';
-    gallery.appendChild(img);
-  });
 
-  document.getElementById('downloadAll').onclick = () => downloadAll(urls);
+  errorDiv.style.display = 'none';
+  errorDiv.textContent = '';
+
+  // Validate URL format
+  if (!sheetUrl || !sheetUrl.trim()) {
+    showError('Please enter a Google Sheet URL');
+    return;
+  }
+
+  // Check if it's an edit URL (wrong format)
+  if (sheetUrl.includes('/edit') || sheetUrl.includes('spreadsheets/d/') && !sheetUrl.includes('/pub')) {
+    showError('⚠️ Wrong URL format!\n\nYou pasted the EDIT URL. You need to PUBLISH your sheet first.\n\n📋 Follow these steps:\n1. Open your Google Sheet\n2. Click File → Share → Publish to web\n3. Select "Comma-separated values (.csv)" from the dropdown\n4. Click "Publish"\n5. Copy the new URL (it should contain "/pub?output=csv")\n6. Paste it here');
+    return;
+  }
+
+  // Check if it's a CSV URL
+  if (!sheetUrl.includes('output=csv') && !sheetUrl.endsWith('.csv')) {
+    showError('⚠️ Invalid URL format!\n\nMake sure you published your sheet as CSV.\nThe URL should contain "output=csv"');
+    return;
+  }
+
+  try {
+    const res = await fetch(sheetUrl);
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
+    }
+
+    const text = await res.text();
+    const rows = text.split('\n').map(r => r.split(','));
+    const urls = rows.flat().filter(u => u.trim().startsWith('http'));
+
+    if (urls.length === 0) {
+      showError('No image URLs found in the sheet!\n\nMake sure your sheet contains URLs starting with http:// or https://');
+      return;
+    }
+
+    gallery.innerHTML = '';
+    urls.forEach(url => {
+      const img = document.createElement('img');
+      img.src = url.trim();
+      img.className = 'thumbnail';
+      gallery.appendChild(img);
+    });
+
+    document.getElementById('downloadAll').onclick = () => downloadAll(urls);
+
+    // Show success message
+    const successDiv = document.createElement('div');
+    successDiv.className = 'success-message';
+    successDiv.textContent = `✓ Loaded ${urls.length} images successfully!`;
+    gallery.insertBefore(successDiv, gallery.firstChild);
+
+  } catch (error) {
+    console.error('Error loading images:', error);
+    showError(`Failed to load sheet!\n\n${error.message}\n\nMake sure:\n1. Your sheet is published to the web\n2. You're using the CSV URL (contains "/pub?output=csv")\n3. Your sheet is publicly accessible`);
+  }
+}
+
+function showError(message) {
+  const errorDiv = document.getElementById('error');
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+  document.getElementById('gallery').innerHTML = '';
 }
 
 // Download a single image with retry logic
